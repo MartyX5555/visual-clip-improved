@@ -7,7 +7,7 @@
 # features that had this tool
  * ability to refresh vclips via button
 
-* features added with this version
+# features added with this version
  * cleaner menu than older
  * ability to copy existent clips (you can choose any clip from a prop).
  * Allowed decimal numbers (no more rounded values).
