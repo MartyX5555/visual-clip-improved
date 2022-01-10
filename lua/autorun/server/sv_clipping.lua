@@ -15,7 +15,7 @@ duplicator.RegisterEntityModifier( "clips", function( ply , Entity , data)
 	
 	timer.Simple(1, function()
 		for _,v in pairs( player.GetAll() ) do
-			if not Entity:IsValid() then return end
+			if not IsValid(Entity) then return end
 
 			SendPropClip( Entity, v )
 		end

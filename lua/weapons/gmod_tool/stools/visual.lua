@@ -4,8 +4,10 @@ Visual Clip Tool
 	Credits to Ralle105 of facepunch
 */
 
+
+
 TOOL.Category		= "Construction"
-TOOL.Name			= "#Visual Clip"
+TOOL.Name			= "#tool.visual.name"
 TOOL.Command		= nil
 TOOL.ConfigName		= ""
 
@@ -25,11 +27,11 @@ if CLIENT then
 
 	}
 
-	language.Add( "tool.visual.name", "Visual Clip Tool" )
-	language.Add( "tool.visual.desc", "Visually Clip entities" )
-	language.Add( "tool.visual.left", "Clip an entity" )
-	language.Add( "tool.visual.right", "Copy a Clip from the current entity. Click again to copy other clip of it" )
-	language.Add( "tool.visual.reload", "Remove the latest clip" )
+	--language.Add( "tool.visual.name", "Visual Clip" )
+	--language.Add( "tool.visual.desc", "Visually Clip entities" )
+	--language.Add( "tool.visual.left", "Clip an entity" )
+	--language.Add( "tool.visual.right", "Copy a Clip from the current entity. Click again to copy other clip of it" )
+	--language.Add( "tool.visual.reload", "Remove the latest clip" )
 
 end
 
@@ -89,12 +91,9 @@ function TOOL:RightClick( trace )
 
 	if not ent:IsValid() or ent:IsWorld() or ent:IsPlayer() or ent == NULL then return end
 
-	ent.ClipData = ent.ClipData or {}
+	local dist, pitch, yaw, ins
 
-	local dist = 0
-	local pitch = 0
-	local yaw = 0
-	local ins = 0
+	ent.ClipData = ent.ClipData or {}
 
 	if ent.ClipData and #ent.ClipData > 0 then
 
@@ -117,10 +116,10 @@ function TOOL:RightClick( trace )
 
 	end
 
-	ply:ConCommand( "visual_distance "..dist )
-	ply:ConCommand( "visual_p " ..pitch )
-	ply:ConCommand( "visual_y " ..yaw )
-	ply:ConCommand( "visual_inside " ..ins )
+	ply:ConCommand( "visual_distance "	..	( dist or 0))
+	ply:ConCommand( "visual_p " 		..	( pitch or 0))
+	ply:ConCommand( "visual_y " 		..	( yaw or 0) )
+	ply:ConCommand( "visual_inside " 	..	( ins or 0) )
 
 	return true
 end
@@ -157,14 +156,16 @@ if CLIENT then
 
 		panel:SetName( "#tool.visual.name" )
 		panel:Help( "#tool.visual.desc" )
-		panel:NumSlider( "Distance" , "visual_distance" , -100 , 100, 4 )
-		panel:NumSlider( "Pitch" , "visual_p" , -180 , 180, 4 )
-		panel:NumSlider( "Yaw" , "visual_y" , -180 , 180, 4 )
-		panel:Button( "Reset" , "visual_reset" , 1)
-		panel:CheckBox( "Render inside of prop", "visual_inside" )
-		panel:ControlHelp( "Clicking this will render the inside of the prop" )
-		panel:NumSlider( "Max clips per prop" , "max_clips_per_prop" , 0 , 25 , 0 )
-		panel:Button( "Refresh clips" , "cliptool_request_clips" , 1)
+		panel:ControlHelp( "Edit the following values to get the desired clip" )
+		panel:NumSlider( "#tool.visual.distance" , "visual_distance" , -100 , 100, 4 )
+		panel:NumSlider( "#tool.visual.pitch" , "visual_p" , -180 , 180, 4 )
+		panel:NumSlider( "#tool.visual.yaw" , "visual_y" , -180 , 180, 4 )
+		panel:Button( "#tool.visual.invertyaw" , "visual_invert_yaw" , 1)
+		panel:Button( "#tool.visual.reset" , "visual_reset" , 1)
+		panel:CheckBox( "#tool.visual.render", "visual_inside" )
+		panel:ControlHelp( "#tool.visual.render_desc" )
+		--panel:NumSlider( "Max clips per prop" , "max_clips_per_prop" , 0 , 25 , 0 )
+		panel:Button( "#tool.visual.refresh" , "cliptool_request_clips" , 1)
 
 	end
 end

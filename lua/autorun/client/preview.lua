@@ -22,6 +22,10 @@ concommand.Add("visual_reset",function()
 	RunConsoleCommand("visual_y",0)
 	RunConsoleCommand("visual_distance",0)
 end)
+concommand.Add("visual_invert_yaw", function()
+	local yaw = (GetConVar("visual_y") or 0):GetFloat()* -1
+	RunConsoleCommand("visual_y",yaw)
+end )
 
 local function ClipData()
 	norm = Angle(net.ReadFloat() , net.ReadFloat() , net.ReadFloat())
@@ -29,7 +33,7 @@ local function ClipData()
 	RunConsoleCommand("visual_adv_distance",d)
 end
 net.Receive( "VisualClip_clip_data" , ClipData)
---usermessage.Hook("visual_clip_data" , ClipData)
+
 
 
 

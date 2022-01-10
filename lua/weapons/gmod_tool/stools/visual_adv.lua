@@ -5,7 +5,7 @@ Visual Clip Tool
 */
 
 TOOL.Category		= "Construction"
-TOOL.Name			= "#Visual Clip - Advanced"
+TOOL.Name			= "#tool.visual_adv.name"
 TOOL.Command		= nil
 TOOL.ConfigName		= ""
 
@@ -14,15 +14,13 @@ TOOL.ClientConVar["inside"] = "0"
 
 if CLIENT then
 
-	language.Add( "tool.visual_adv.name", "Visual Clip Tool - Advanced" )
-	language.Add( "tool.visual_adv.desc", "Visually Clip Models" )
+	--language.Add( "tool.visual_adv.name", "Visual Clip - Advanced" )
+	--language.Add( "tool.visual_adv.desc", "Visually Clip Models" )
 	language.Add( "tool.visual_adv.0", "Primary: Click two different ares to define a clipplane 	Primary + Shift: Clip by plane   Reload: Remove Clips" )
 	language.Add( "tool.visual_adv.1", "Primary: Click on a second spot" )
 	language.Add( "tool.visual_adv.2", "Primary: Select the side of the prop you want to keep	Seconday: Confirm clip" )
 	language.Add( "tool.visual_adv.3", "Shift + Primary: Define a new plane 	Secondary: Confirm clip")
 end
-
-
 
 
 local spots = {ang = Angle(0,0,0)}
@@ -33,7 +31,8 @@ TOOL.dist = 0
 
 function TOOL:Think()
 
-	local trace = self:GetOwner():GetEyeTraceNoCursor( )
+	local owner = self:GetOwner()
+	local trace = owner:GetEyeTraceNoCursor( )
 	local ent = trace.Entity
 
 	if ent ~= self.lastent and not CLIENT and ent ~= NULL and ent:IsValid() and self.alt then
@@ -46,9 +45,6 @@ function TOOL:Think()
 		local ang = self.norm
 		local pos = ent:LocalToWorld( ent:OBBCenter() )
 
-		print(self.pos)
-		print(ang)
-
 		local LinePoint1 = self.pos
 		local LinePoint2 = self.pos + ang
 		local dist = -(self.norm:Dot(pos-LinePoint1))/(self.norm:Dot(LinePoint2-LinePoint1))
@@ -60,42 +56,12 @@ function TOOL:Think()
 			net.WriteFloat(ang.y)
 			net.WriteFloat(ang.r)
 			net.WriteFloat(dist )
-		net.Send(self:GetOwner())
+		net.Send(owner)
 
 	end
 
 
 	return true
-end
-
-function TOOL:RightClick( trace )
-	if CLIENT then return true end
-	if self:GetStage() < 2 and self.mode == 2 then
-		self:GetOwner():PrintMessage(HUD_PRINTCENTER , "Please complete all the steps before you clip")
-		return
-	end
-
-	local ent = trace.Entity
-	if !IsValid(ent) or ent:IsWorld() or ent:IsPlayer() or ent==NULL then return end
-
-	ent.ClipData = ent.ClipData or {}
-
-	local ind = table.insert(ent.ClipData , {
-		n = spots.ang,
-		d = self:GetClientInfo("distance"),
-		inside = tobool( self:GetClientInfo("inside") or false ),
-		new = true
-	})
-	SendPropClip( ent , nil , ind )
-	duplicator.StoreEntityModifier( ent , "clips", ent.ClipData )
-	if !table.HasValue( Clipped , ent ) then
-		Clipped[ #Clipped + 1 ] =  ent
-	end
-	self.mode = 0
-	self.alt = true
-	self:SetStage(0)
-
-	return true;
 end
 
 function TOOL:LeftClick( trace )
@@ -104,32 +70,6 @@ function TOOL:LeftClick( trace )
 	if !ent:IsValid() or ent:IsWorld() or ent:IsPlayer() or ent==NULL then return end
 	local pos = trace.HitPos
 	local stage = self:GetStage()
-
-	if self:GetOwner():KeyDown( IN_SPEED ) and self.mode != 2 and (stage == 0 or stage == 3) then
-		self:SetStage( 3 )
-		self.lastent = ent
-		self.norm = -trace.HitNormal
-		self.pos = trace.HitPos
-		self.mode = 1
-		self.alt = true
-
-		local ang = self.norm:Angle()
-		local pos = ent:LocalToWorld( ent:OBBCenter() )
-
-		local LinePoint1 = self.pos
-		local LinePoint2 = self.pos + ang:Forward()
-		local dist = -(self.norm:Dot(pos-LinePoint1))/(self.norm:Dot(LinePoint2-LinePoint1))
-
-		net.Start("VisualClip_clip_data")
-			local ang = ent:WorldToLocalAngles(self.norm:Angle())
-			spots.ang = ang
-			net.WriteFloat(ang.p)
-			net.WriteFloat(ang.y)
-			net.WriteFloat(ang.r)
-			net.WriteFloat(dist)			
-		net.Send(self:GetOwner())
-		return true
-	end
 
 	if self.mode != 1 and stage != 3 then
 		self.mode = 2
@@ -172,14 +112,75 @@ function TOOL:LeftClick( trace )
 		end
 		self:SetStage( stage + 1 )
 	end
+
+	--Left Click + Shift
+	if self:GetOwner():KeyDown( IN_SPEED ) and self.mode != 2 and (stage == 0 or stage == 3) then
+
+		self:SetStage( 3 )
+		self.lastent 	= ent
+		self.norm 		= -trace.HitNormal
+		self.pos 		= trace.HitPos
+		self.mode 		= 1
+		self.alt 		= true
+
+		local ang = self.norm:Angle()
+		local pos = ent:LocalToWorld( ent:OBBCenter() )
+
+		local LinePoint1 = self.pos
+		local LinePoint2 = self.pos + ang:Forward()
+		local dist = -(self.norm:Dot(pos-LinePoint1))/(self.norm:Dot(LinePoint2-LinePoint1))
+
+		net.Start("VisualClip_clip_data")
+			local ang = ent:WorldToLocalAngles(self.norm:Angle())
+			spots.ang = ang
+			net.WriteFloat(ang.p)
+			net.WriteFloat(ang.y)
+			net.WriteFloat(ang.r)
+			net.WriteFloat(dist)			
+		net.Send(self:GetOwner())
+
+		return true
+	end
+
 	return true
+end
+
+function TOOL:RightClick( trace )
+
+	if CLIENT then return true end
+	if self:GetStage() < 2 and self.mode == 2 then
+		self:GetOwner():PrintMessage(HUD_PRINTCENTER , "Please complete all the steps before you clip")
+		return
+	end
+
+	local ent = trace.Entity
+	if !IsValid(ent) or ent:IsWorld() or ent:IsPlayer() or ent==NULL then return end
+
+	ent.ClipData = ent.ClipData or {}
+
+	local ind = table.insert(ent.ClipData , {
+		n = spots.ang,
+		d = self:GetClientInfo("distance"),
+		inside = tobool( self:GetClientInfo("inside") or false ),
+		new = true
+	})
+	SendPropClip( ent , nil , ind )
+	duplicator.StoreEntityModifier( ent , "clips", ent.ClipData )
+	if !table.HasValue( Clipped , ent ) then
+		Clipped[ #Clipped + 1 ] =  ent
+	end
+	self.mode = 0
+	self.alt = true
+	self:SetStage(0)
+
+	return true;
 end
 
 function TOOL:Reload( trace )
 
 	if CLIENT then return true end
 	local ent = trace.Entity
-	if not ent:IsValid() then return end
+	if not ent:IsValid() then return false end
 
 	ent.ClipData = ent.ClipData or {}
 	local count = #ent.ClipData
@@ -229,7 +230,7 @@ if CLIENT then
 		panel:Button( "Reset" , "visual_adv_reset" , 1)
 		panel:CheckBox( "Render inside of prop", "visual_adv_inside" )
 		panel:ControlHelp( "Clicking this will render the inside of the prop" )
-		panel:NumSlider( "Max clips per prop" , "max_clips_per_prop" , 0 , 25 , 0 )
+		--panel:NumSlider( "Max clips per prop" , "max_clips_per_prop" , 0 , 25 , 0 )
 		panel:Button( "Refresh clips" , "cliptool_request_clips" , 1)
 
 	end
